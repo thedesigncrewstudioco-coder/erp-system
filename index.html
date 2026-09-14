@@ -738,6 +738,10 @@
         <div style="flex:1;"><label>Select Client</label><select id="ledger-client" onchange="renderLedger()"></select></div>
         <div class="balance-pill" id="ledger-balance">Balance: Rs 0</div>
       </div>
+      <div class="doc-actions" style="margin-bottom:14px;">
+        <button class="btn ghost" onclick="window.print()">Print / Save as PDF</button>
+        <button class="btn ghost" style="color:#25D366;border-color:#25D366;" onclick="sendLedgerOnWhatsApp()">📱 Send on WhatsApp</button>
+      </div>
       <table>
         <thead><tr><th>Date</th><th>Type</th><th>Reference</th><th>Description</th><th class="num-col">Debit (Billed)</th><th class="num-col">Credit (Received)</th><th class="num-col">Balance</th></tr></thead>
         <tbody id="ledger-body"></tbody>
@@ -1356,6 +1360,7 @@ function showQuotePreview(id){
       ${docFooterHtml()}
       <div class="doc-actions">
         <button class="btn" onclick="window.print()">Print / Save as PDF</button>
+        <button class="btn ghost" style="color:#25D366;border-color:#25D366;" onclick="sendQuoteOnWhatsApp('${q.id}')">📱 Send on WhatsApp</button>
         <button class="btn ghost" onclick="document.getElementById('quote-preview-wrap').innerHTML=''">Close</button>
       </div>
     </div>`;
@@ -1543,6 +1548,49 @@ function renderLetterheadPreview(){
 }
 
 /* ---------- Receipt & Payment printable previews ---------- */
+/* ---------- WhatsApp sharing ---------- */
+function sendOnWhatsApp(phone, message){
+  let num = (phone||'').toString().replace(/[^0-9+]/g,'');
+  if(!num){
+    num = prompt('This client has no phone number saved.\nEnter WhatsApp number with country code (e.g. 923001234567):','');
+    if(!num) return;
+    num = num.replace(/[^0-9+]/g,'');
+  }
+  num = num.replace(/^\+/,'').replace(/^0+/,'92'); // best-effort: local numbers starting 0 -> assume PK country code
+  if(num.length<8){ alert('Please enter a valid phone number with country code.'); return; }
+  const url = 'https://wa.me/'+num+'?text='+encodeURIComponent(message);
+  window.open(url, '_blank');
+}
+function sendReceiptOnWhatsApp(id){
+  const r = receipts.find(x=>x.id===id);
+  if(!r) return;
+  const client = clients.find(c=>c.id===r.clientId);
+  const msg = `Dear ${r.clientName},\n\nPlease find your Receipt Voucher ${r.no} dated ${r.date} for ${fmt(r.amount)} from ${FIRM.name}.\n\n(Tip: tap "Print / Save as PDF" first, save the file, then attach it here.)\n\nThank you!`;
+  sendOnWhatsApp(client?client.phone:'', msg);
+}
+function sendPaymentOnWhatsApp(id){
+  const p = payments.find(x=>x.id===id);
+  if(!p) return;
+  const client = clients.find(c=>c.name.toLowerCase()===p.to.toLowerCase());
+  const msg = `Dear ${p.to},\n\nPlease find Payment Voucher ${p.no} dated ${p.date} for ${fmt(p.amount)} from ${FIRM.name}.\n\n(Tip: tap "Print / Save as PDF" first, save the file, then attach it here.)\n\nThank you!`;
+  sendOnWhatsApp(client?client.phone:'', msg);
+}
+function sendQuoteOnWhatsApp(id){
+  const q = quotations.find(x=>x.id===id);
+  if(!q) return;
+  const client = clients.find(c=>c.id===q.clientId);
+  const msg = `Dear ${q.clientName},\n\nPlease find your Quotation ${q.no} dated ${q.date}${q.project?(' for '+q.project):''} — Total: ${fmt(q.total)}, from ${FIRM.name}.\n\n(Tip: tap "Print / Save as PDF" first, save the file, then attach it here.)\n\nThank you!`;
+  sendOnWhatsApp(client?client.phone:'', msg);
+}
+function sendLedgerOnWhatsApp(){
+  const clientId = document.getElementById('ledger-client').value;
+  const client = clients.find(c=>c.id===clientId);
+  if(!client){ alert('Please select a client first.'); return; }
+  const balance = document.getElementById('ledger-balance').textContent;
+  const msg = `Dear ${client.name},\n\nPlease find your account ledger from ${FIRM.name}.\n${balance}\n\n(Tip: tap "Print / Save as PDF" first, save the file, then attach it here.)\n\nThank you!`;
+  sendOnWhatsApp(client.phone, msg);
+}
+
 function showReceiptPreview(id){
   const r = receipts.find(x=>x.id===id);
   if(!r) return;
@@ -1558,6 +1606,7 @@ function showReceiptPreview(id){
       ${docFooterHtml()}
       <div class="doc-actions">
         <button class="btn" onclick="window.print()">Print / Save as PDF</button>
+        <button class="btn ghost" style="color:#25D366;border-color:#25D366;" onclick="sendReceiptOnWhatsApp('${r.id}')">📱 Send on WhatsApp</button>
         <button class="btn ghost" onclick="document.getElementById('receipt-preview-wrap').innerHTML=''">Close</button>
       </div>
     </div>`;
@@ -1578,6 +1627,7 @@ function showPaymentPreview(id){
       ${docFooterHtml()}
       <div class="doc-actions">
         <button class="btn" onclick="window.print()">Print / Save as PDF</button>
+        <button class="btn ghost" style="color:#25D366;border-color:#25D366;" onclick="sendPaymentOnWhatsApp('${p.id}')">📱 Send on WhatsApp</button>
         <button class="btn ghost" onclick="document.getElementById('payment-preview-wrap').innerHTML=''">Close</button>
       </div>
     </div>`;
