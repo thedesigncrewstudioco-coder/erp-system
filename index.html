@@ -442,6 +442,7 @@
   }
 
   @media print{
+    @page{margin:12mm;}
     .sidebar, .page-head, .form-card, .doc-actions, .stat-row, nav{display:none !important;}
     main{padding:0;max-width:100%;}
     .doc-preview{border:none;box-shadow:none;}
@@ -540,7 +541,7 @@
       <div>
         <h1 id="sidebar-name">The Design Crew</h1>
         <div class="mark">DESIGN STUDIO</div>
-        <p id="sidebar-tagline">Architecture · Interior · Construction</p>
+        <p id="sidebar-tagline" style="display:none;"></p>
       </div>
     </div>
     <nav id="nav">
