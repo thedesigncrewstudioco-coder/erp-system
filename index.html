@@ -441,6 +441,20 @@
     font-size:13.5px;
   }
 
+  /* ---------- BOQ ---------- */
+  .bcol-head,.bi-row{display:grid;grid-template-columns:2.6fr .7fr .8fr 1fr 1.1fr 34px;gap:10px;align-items:center;}
+  .bcol-head{font-family:"Helvetica Neue",Arial,sans-serif;font-size:10.5px;letter-spacing:.08em;color:var(--ink-soft);text-transform:uppercase;margin:12px 0 6px;}
+  .bi-row{margin-bottom:8px;}
+  .bi-row .amt{font-size:13px;text-align:right;padding-right:4px;}
+  .boq-summary{max-width:360px;margin:18px 0 0 auto;}
+  .boq-terms{font-family:"Helvetica Neue",Arial,sans-serif;font-size:11.5px;color:var(--ink-soft);margin-top:18px;line-height:1.6;}
+  .boq-terms b{color:var(--ink);}
+  .boq-print-sec td{font-family:"Helvetica Neue",Arial,sans-serif;font-weight:700;font-size:12px;color:var(--blue-deep);background:var(--paper-2);padding:8px 10px;letter-spacing:.04em;}
+  .bwall{margin:-2px 0 12px;padding:10px 12px;border:1px dashed var(--line);background:var(--paper);}
+  .bw-row{display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:10px;margin-bottom:6px;align-items:center;}
+  .bw-row .amt{font-size:13px;text-align:right;padding-right:4px;}
+  .bwall .btn{margin-top:4px;}
+  @media (max-width:800px){.bcol-head{display:none;}.bi-row{grid-template-columns:1fr 1fr;}}
   @media print{
     @page{margin:12mm;}
     .sidebar, .page-head, .form-card, .doc-actions, .stat-row, nav{display:none !important;}
@@ -550,8 +564,9 @@
       <button data-view="receipt"><span class="num">03</span>Receipt Voucher</button>
       <button data-view="payment"><span class="num">04</span>Payment Voucher</button>
       <button data-view="quotation"><span class="num">05</span>Quotation</button>
-      <button data-view="ledger"><span class="num">06</span>Ledger</button>
-      <button data-view="settings"><span class="num">07</span>Firm Settings</button>
+      <button data-view="boq"><span class="num">06</span>BOQ</button>
+      <button data-view="ledger"><span class="num">07</span>Ledger</button>
+      <button data-view="settings"><span class="num">08</span>Firm Settings</button>
     </nav>
     <div class="sync-pill" id="sync-status">☁ Synced</div>
     <div class="sidebar-foot">
@@ -697,6 +712,41 @@
       <div id="quote-preview-wrap"></div>
     </section>
 
+    <!-- BOQ -->
+    <section class="view" id="view-boq">
+      <div class="page-head">
+        <div><h2>BOQ — Bill of Quantities</h2><div class="sub">Grey Structure, Finishing &amp; Interior — material-wise items, rates entered by you</div></div>
+      </div>
+      <div class="form-card">
+        <div class="grid">
+          <div><label>BOQ No.</label><input id="b-no" readonly></div>
+          <div><label>Date</label><input id="b-date" type="date"></div>
+          <div><label>Client</label><select id="b-client"></select></div>
+          <div><label>Project / Site</label><input id="b-project" placeholder="e.g. Residence, DHA Phase 6"></div>
+          <div><label>Plot / Covered Area</label><input id="b-size" placeholder="e.g. 500 sq yd — 3,200 sft covered"></div>
+        </div>
+        <h3 class="section-title" style="margin-top:22px;">Items</h3>
+        <datalist id="boq-units"></datalist>
+        <div id="boq-blocks"></div>
+        <div class="totals-box">
+          <table>
+            <tr><td>Subtotal</td><td class="num-col" id="b-subtotal">Rs 0</td></tr>
+            <tr><td>Discount (Rs)</td><td class="num-col"><input id="b-discount" type="number" min="0" value="0" oninput="renderBoqTotals()" style="text-align:right;"></td></tr>
+            <tr class="grand"><td>Total</td><td class="num-col" id="b-total">Rs 0</td></tr>
+          </table>
+        </div>
+        <div style="margin-top:14px;"><label>Notes / Terms &amp; Conditions (printed on BOQ)</label><textarea id="b-terms" rows="6"></textarea></div>
+        <button class="btn" id="boq-submit-btn" onclick="saveBoq()">Save &amp; Generate BOQ</button>
+      </div>
+
+      <h3 class="section-title">Saved BOQs</h3>
+      <table>
+        <thead><tr><th>BOQ No.</th><th>Date</th><th>Client</th><th>Project</th><th class="num-col">Total</th><th></th></tr></thead>
+        <tbody id="boqs-body"></tbody>
+      </table>
+      <div id="boq-preview-wrap"></div>
+    </section>
+
     <!-- LEDGER -->
     <section class="view" id="view-ledger">
       <div class="page-head">
@@ -795,7 +845,7 @@ function saveToCloud(){
   clearTimeout(saveTimer);
   saveTimer = setTimeout(()=>{
     DATA_DOC.set({
-      clients, receipts, payments, quotations, counters, firm: FIRM,
+      clients, receipts, payments, quotations, boqs, counters, firm: FIRM,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     }).then(()=>setSyncStatus('saved'))
       .catch(err=>{ console.error(err); alert('Could not save to cloud: '+err.message); });
@@ -811,7 +861,9 @@ function loadFromCloud(){
       receipts = d.receipts || [];
       payments = d.payments || [];
       quotations = d.quotations || [];
-      counters = d.counters || { receipt:1, payment:1, quote:1 };
+      boqs = d.boqs || [];
+      counters = d.counters || { receipt:1, payment:1, quote:1, boq:1 };
+      if(!counters.boq) counters.boq = 1;
       if(d.firm) Object.assign(FIRM, d.firm);
     }
     cloudLoaded = true;
@@ -860,7 +912,7 @@ auth.onAuthStateChanged(user=>{
 
 /* ---------------- Backup / Restore ---------------- */
 function downloadBackup(){
-  const payload = { clients, receipts, payments, quotations, counters, firm: FIRM, exportedAt: new Date().toISOString() };
+  const payload = { clients, receipts, payments, quotations, boqs, counters, firm: FIRM, exportedAt: new Date().toISOString() };
   const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -883,7 +935,9 @@ function restoreBackup(event){
       receipts = d.receipts || [];
       payments = d.payments || [];
       quotations = d.quotations || [];
-      counters = d.counters || { receipt:1, payment:1, quote:1 };
+      boqs = d.boqs || [];
+      counters = d.counters || { receipt:1, payment:1, quote:1, boq:1 };
+      if(!counters.boq) counters.boq = 1;
       if(d.firm) Object.assign(FIRM, d.firm);
       applyFirmToUI();
       renderQuoteRows();
@@ -908,7 +962,8 @@ let clients = [];
 let receipts = [];
 let payments = [];
 let quotations = [];
-let counters = { receipt: 1, payment: 1, quote: 1 };
+let boqs = [];
+let counters = { receipt: 1, payment: 1, quote: 1, boq: 1 };
 let quoteItems = [];
 
 const QCATS = ['paperwork','architecture','civil','interior'];
@@ -978,7 +1033,8 @@ document.getElementById('nav').addEventListener('click', e=>{
 });
 
 /* ---------- Edit state ---------- */
-let editingClientId = null, editingReceiptId = null, editingPaymentId = null, editingQuoteId = null;
+let editingClientId = null, editingReceiptId = null, editingPaymentId = null, editingQuoteId = null, editingBoqId = null;
+let boqItems = [];
 
 /* ---------- Clients ---------- */
 function addClient(){
@@ -1046,6 +1102,8 @@ function renderClients(){
   document.getElementById('r-client').innerHTML = optionsHtml;
   document.getElementById('q-client').innerHTML = optionsHtml;
   document.getElementById('ledger-client').innerHTML = optionsHtml;
+  const bc = document.getElementById('b-client'); const bv = bc.value;
+  bc.innerHTML = optionsHtml; if(bv) bc.value = bv;
 }
 
 /* ---------- Receipt Voucher ---------- */
@@ -1352,6 +1410,280 @@ function showQuotePreview(id){
   document.getElementById('quote-preview-wrap').scrollIntoView({behavior:'smooth', block:'start'});
 }
 
+/* ---------- BOQ (Bill of Quantities) ---------- */
+const BSEC = ['grey','finish','interior'];
+const BSEC_LABEL = { grey:'Grey Structure', finish:'Finishing', interior:'Interior' };
+const BSEC_NOTE = {
+  grey:'Excavation, concrete, steel, masonry & walls — up to roof slab',
+  finish:'Plaster, tiling, paint, doors & windows, electrical, plumbing',
+  interior:'Woodwork, ceilings, wall treatments, lighting & furnishings',
+};
+const BUNITS = ['sft','rft','cft','sqm','nos','kg','ton','bag','set','pt','LS'];
+const BDEF_TERMS = [
+  '1. Rates are as mutually agreed and are exclusive of taxes unless stated otherwise.',
+  '2. Quantities are approximate and will be re-measured on actual execution.',
+  '3. All materials shall be of approved make and quality as agreed with the client.',
+  '4. Payment shall be made in stages as per the agreed payment schedule.',
+  '5. Any work outside this BOQ will be charged separately.',
+  '6. This BOQ is valid for 30 days from the date of issue.',
+].join('\n');
+const BPRESETS = {
+  grey: {
+    'Earth Work & Foundation': [['Excavation for foundation & trenches','cft'],['Backfilling & compaction (approved sand / earth)','cft'],['Anti-termite treatment','sft'],['Plain Cement Concrete (PCC) 1:4:8','cft'],['Brick / crush soling','sft']],
+    'RCC Work': [['RCC footings & foundation (cement, sand, crush)','cft'],['RCC columns','cft'],['RCC beams & lintels','cft'],['RCC slab (floors / roof)','cft'],['RCC stairs','cft'],['Shuttering / formwork','sft'],['Steel reinforcement (Grade 60)','kg']],
+    'Walls & Masonry': [['Brick masonry 9 inch thick wall (external)','sft'],['Brick masonry 4.5 inch thick wall (partition)','sft'],['Block masonry wall','sft'],['Boundary wall (brick masonry)','rft'],['Retaining wall (RCC / masonry)','rft'],['Damp proof course (DPC)','sft']],
+    'Other Structural': [['Water tank (underground / overhead)','nos'],['Septic tank & soakage pit','nos'],['Roof waterproofing & thermal insulation','sft']],
+  },
+  finish: {
+    'Plaster': [['Internal wall plaster (cement & sand)','sft'],['External wall plaster','sft'],['Ceiling plaster','sft']],
+    'Flooring & Wall Tiling': [['Floor tiles (supply & fix)','sft'],['Wall tiles — bath / kitchen','sft'],['Marble / granite flooring','sft'],['Skirting','rft'],['Kitchen counter (granite / marble)','rft']],
+    'Paint & Polish': [['Wall putty (2 coats)','sft'],['Emulsion paint (primer + 2 coats)','sft'],['Weather-shield paint (external walls)','sft'],['Wood polish / enamel','sft']],
+    'Doors & Windows': [['Wooden doors with frames & hardware','nos'],['Aluminium / UPVC windows with glass','sft'],['Main gate (MS / wooden)','nos'],['Steel grill / railing','rft']],
+    'Electrical': [['Conduiting & wiring (per point)','pt'],['Switches, sockets & distribution board','set'],['Light fixtures','nos']],
+    'Plumbing & Sanitary': [['Water supply & drainage piping','LS'],['Sanitary fixtures (commode, basin, shower)','set'],['Gas line & fittings','LS']],
+  },
+  interior: {
+    'Woodwork': [['Wardrobes (board / laminate finish)','sft'],['Kitchen cabinets (base & wall units)','rft'],['Vanity units','nos'],['TV lounge / feature unit','sft']],
+    'Walls & Ceiling': [['Wall paneling / feature wall','sft'],['Wall paper / texture paint','sft'],['False ceiling (gypsum / POP)','sft'],['Cove lighting / ceiling details','rft']],
+    'Floors & Fixtures': [['Wooden / vinyl flooring','sft'],['Decorative lights & fittings','nos'],['Curtains / blinds','sft'],['Furniture (sofa, beds, tables)','set']],
+  },
+};
+document.getElementById('boq-units').innerHTML = BUNITS.map(u=>`<option value="${u}">`).join('');
+
+const BWALLS = ['Front','Back','Left','Right'];
+const r2 = n => Math.round((n||0)*100)/100;
+function wallsArea(i){ return Math.max(r2(i.walls.w.reduce((s,x)=>s+(x.l||0)*(x.h||0),0) - (i.walls.less||0)),0); }
+function toggleBoqWalls(id){
+  const it = boqItems.find(x=>x.id===id); if(!it) return;
+  if(it.walls){ it.walls = null; }
+  else { it.walls = { w: BWALLS.map(n=>({n, l:0, h:0})), less:0 }; it.unit = 'sft'; it.qty = 0; }
+  renderBoqRows();
+}
+function syncBoqWalls(it){
+  it.qty = wallsArea(it);
+  const q = document.getElementById('bqty-'+it.id); if(q) q.value = it.qty;
+  const n = document.getElementById('bwn-'+it.id); if(n) n.innerHTML = '<b>Net: '+it.qty+' sft</b>';
+  it.walls.w.forEach((x,k)=>{ const a = document.getElementById('bwa-'+it.id+'-'+k); if(a) a.textContent = r2(x.l*x.h); });
+  const a = document.getElementById('bamt-'+it.id); if(a) a.textContent = fmt(boqLine(it));
+  const s = document.getElementById('bsub-'+it.sec); if(s) s.textContent = fmt(boqSecTotal(it.sec));
+  renderBoqTotals();
+}
+function updateBoqWall(id, idx, field, val){
+  const it = boqItems.find(x=>x.id===id); if(!it||!it.walls) return;
+  it.walls.w[idx][field] = field==='n' ? val : (parseFloat(val)||0);
+  syncBoqWalls(it);
+}
+function updateBoqLess(id, val){
+  const it = boqItems.find(x=>x.id===id); if(!it||!it.walls) return;
+  it.walls.less = parseFloat(val)||0;
+  syncBoqWalls(it);
+}
+function boqWallPanel(i){
+  if(!i.walls) return `<div style="margin:-2px 0 10px;"><button class="btn ghost small" onclick="toggleBoqWalls('${i.id}')">▦ Wall-wise (Front / Back / Left / Right)</button></div>`;
+  return `<div class="bwall">
+    <div class="bw-row" style="font-size:10.5px;letter-spacing:.08em;color:var(--ink-soft);text-transform:uppercase;"><div>Wall</div><div>Length (ft)</div><div>Height (ft)</div><div style="text-align:right;">Area (sft)</div></div>
+    ${i.walls.w.map((x,k)=>`<div class="bw-row">
+      <input value="${escAttr(x.n)}" oninput="updateBoqWall('${i.id}',${k},'n',this.value)">
+      <input type="number" min="0" step="any" value="${x.l}" oninput="updateBoqWall('${i.id}',${k},'l',this.value)">
+      <input type="number" min="0" step="any" value="${x.h}" oninput="updateBoqWall('${i.id}',${k},'h',this.value)">
+      <div class="amt" id="bwa-${i.id}-${k}">${r2(x.l*x.h)}</div></div>`).join('')}
+    <div class="bw-row"><div style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;">Less: doors / windows (sft)</div>
+      <input type="number" min="0" step="any" value="${i.walls.less}" oninput="updateBoqLess('${i.id}',this.value)"><div></div>
+      <div class="amt" id="bwn-${i.id}"><b>Net: ${wallsArea(i)} sft</b></div></div>
+    <button class="btn ghost small" onclick="toggleBoqWalls('${i.id}')">Remove wall-wise (enter qty manually)</button>
+  </div>`;
+}
+function boqWallNote(i){
+  if(!i.walls) return '';
+  const parts = i.walls.w.filter(x=>x.l*x.h>0).map(x=>`${esc(x.n)}: ${x.l} × ${x.h} = ${r2(x.l*x.h)}`);
+  if(!parts.length) return '';
+  if(i.walls.less>0) parts.push('Less openings: '+i.walls.less);
+  return `<tr><td></td><td colspan="5" style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:10.5px;color:var(--ink-soft);padding-top:0;">${parts.join(' &nbsp;|&nbsp; ')} &nbsp;(ft × ft = sft)</td></tr>`;
+}
+const boqLine = i => (parseFloat(i.qty)||0) * (parseFloat(i.rate)||0);
+const boqSecTotal = sec => boqItems.filter(i=>i.sec===sec).reduce((s,i)=>s+boqLine(i),0);
+const boqSubtotal = () => boqItems.reduce((s,i)=>s+boqLine(i),0);
+
+function addBoqRow(sec, desc='', unit='sft', qty=0, rate=0){
+  boqItems.push({ id:'BI'+Math.random().toString(36).slice(2), sec, desc, unit, qty, rate, walls:null });
+  renderBoqRows();
+}
+function addBoqPreset(sec){
+  const sel = document.getElementById('bpreset-'+sec);
+  if(!sel.value) return;
+  const [g,i] = sel.value.split('.').map(Number);
+  const p = Object.values(BPRESETS[sec])[g][i];
+  addBoqRow(sec, p[0], p[1], 0, 0);
+  if(p[1]==='sft' && /wall/i.test(p[0])) toggleBoqWalls(boqItems[boqItems.length-1].id);
+}
+function removeBoqRow(id){ boqItems = boqItems.filter(i=>i.id!==id); renderBoqRows(); }
+function updateBoqRow(id, field, val){
+  const it = boqItems.find(i=>i.id===id);
+  if(!it) return;
+  it[field] = (field==='desc'||field==='unit') ? val : (parseFloat(val)||0);
+  const a = document.getElementById('bamt-'+id); if(a) a.textContent = fmt(boqLine(it));
+  const s = document.getElementById('bsub-'+it.sec); if(s) s.textContent = fmt(boqSecTotal(it.sec));
+  renderBoqTotals();
+}
+function renderBoqRows(){
+  document.getElementById('boq-blocks').innerHTML = BSEC.map((sec,si)=>{
+    const items = boqItems.filter(i=>i.sec===sec);
+    const opts = Object.entries(BPRESETS[sec]).map(([grp,list],gi)=>
+      `<optgroup label="${escAttr(grp)}">${list.map((p,ii)=>`<option value="${gi}.${ii}">${esc(p[0])} (${p[1]})</option>`).join('')}</optgroup>`).join('');
+    const rows = items.length ? `
+      <div class="bcol-head"><div>Description / Material</div><div>Unit</div><div>Qty</div><div>Rate (Rs)</div><div>Amount (Rs)</div><div></div></div>
+      ${items.map(i=>`
+        <div class="bi-row">
+          <input value="${escAttr(i.desc)}" placeholder="Item / material description" oninput="updateBoqRow('${i.id}','desc',this.value)">
+          <input list="boq-units" value="${escAttr(i.unit)}" oninput="updateBoqRow('${i.id}','unit',this.value)">
+          <input type="number" min="0" step="any" id="bqty-${i.id}" value="${i.qty}" ${i.walls?'readonly title="Calculated from walls below"':''} oninput="updateBoqRow('${i.id}','qty',this.value)">
+          <input type="number" min="0" step="any" value="${i.rate}" oninput="updateBoqRow('${i.id}','rate',this.value)">
+          <div class="amt" id="bamt-${i.id}">${fmt(boqLine(i))}</div>
+          <button class="remove-x" onclick="removeBoqRow('${i.id}')" title="Remove">×</button>
+        </div>${boqWallPanel(i)}`).join('')}` : `<div class="qcat-empty">No items added yet in this section.</div>`;
+    return `
+      <div class="qcat-block">
+        <div class="qcat-head">
+          <div><h4>${String.fromCharCode(65+si)}. ${BSEC_LABEL[sec]}</h4><div class="qcat-note">${BSEC_NOTE[sec]}</div></div>
+          <div class="qcat-preset">
+            <select id="bpreset-${sec}"><option value="">Quick-add a common item…</option>${opts}</select>
+            <button class="btn ghost small" onclick="addBoqPreset('${sec}')">+ Add Selected</button>
+          </div>
+        </div>
+        ${rows}
+        <button class="btn ghost small" style="margin-top:10px;" onclick="addBoqRow('${sec}')">+ Add Custom Item</button>
+        <div class="qcat-subtotal">Section Subtotal <b id="bsub-${sec}">${fmt(boqSecTotal(sec))}</b></div>
+      </div>`;
+  }).join('');
+  renderBoqTotals();
+}
+function renderBoqTotals(){
+  const sub = boqSubtotal();
+  const disc = parseFloat(document.getElementById('b-discount').value)||0;
+  document.getElementById('b-subtotal').textContent = fmt(sub);
+  document.getElementById('b-total').textContent = fmt(Math.max(sub-disc,0));
+}
+function saveBoq(){
+  const clientId = document.getElementById('b-client').value;
+  if(!clientId){ alert('Please select or add a client first.'); return; }
+  if(!boqItems.length){ alert('Please add at least one item.'); return; }
+  const client = clients.find(c=>c.id===clientId);
+  const subtotal = boqSubtotal();
+  const discount = parseFloat(document.getElementById('b-discount').value)||0;
+  const data = {
+    date: document.getElementById('b-date').value || todayStr(),
+    clientId, clientName: client.name,
+    project: document.getElementById('b-project').value.trim(),
+    size: document.getElementById('b-size').value.trim(),
+    terms: document.getElementById('b-terms').value.trim(),
+    items: JSON.parse(JSON.stringify(boqItems)),
+    subtotal, discount, total: Math.max(subtotal-discount,0),
+  };
+  let b;
+  if(editingBoqId){
+    b = boqs.find(x=>x.id===editingBoqId);
+    Object.assign(b, data);
+    editingBoqId = null;
+    document.getElementById('boq-submit-btn').textContent = 'Save & Generate BOQ';
+  } else {
+    b = { id:'BQ'+Date.now(), no: nextVoucherNo('BQ', counters.boq++), ...data };
+    boqs.push(b);
+  }
+  boqItems = [];
+  document.getElementById('b-project').value = '';
+  document.getElementById('b-size').value = '';
+  document.getElementById('b-discount').value = 0;
+  document.getElementById('b-terms').value = BDEF_TERMS;
+  renderBoqRows();
+  refreshAll();
+  saveToCloud();
+  showBoqPreview(b.id);
+}
+function editBoq(id){
+  const b = boqs.find(x=>x.id===id);
+  if(!b) return;
+  document.getElementById('b-client').value = b.clientId;
+  document.getElementById('b-date').value = b.date;
+  document.getElementById('b-project').value = b.project||'';
+  document.getElementById('b-size').value = b.size||'';
+  document.getElementById('b-discount').value = b.discount||0;
+  document.getElementById('b-terms').value = b.terms||'';
+  boqItems = JSON.parse(JSON.stringify(b.items||[]));
+  editingBoqId = id;
+  document.getElementById('boq-submit-btn').textContent = 'Update BOQ';
+  renderBoqRows();
+  document.getElementById('view-boq').scrollIntoView({behavior:'smooth', block:'start'});
+}
+function removeBoq(id){
+  if(!confirm('Delete this BOQ?')) return;
+  boqs = boqs.filter(b=>b.id!==id);
+  document.getElementById('boq-preview-wrap').innerHTML = '';
+  refreshAll(); saveToCloud();
+}
+function renderBoqs(){
+  document.getElementById('b-no').value = nextVoucherNo('BQ', counters.boq);
+  document.getElementById('boqs-body').innerHTML = boqs.length ? [...boqs].reverse().map(b=>`
+    <tr>
+      <td>${b.no}</td><td>${b.date}</td><td>${esc(b.clientName)}</td><td>${esc(b.project)||'—'}</td>
+      <td class="num-col">${fmt(b.total)}</td>
+      <td>
+        <button class="btn ghost small" onclick="showBoqPreview('${b.id}')">View</button>
+        <button class="btn ghost small" onclick="editBoq('${b.id}')">Edit</button>
+        <button class="btn ghost small" onclick="removeBoq('${b.id}')">Delete</button>
+      </td>
+    </tr>`).join('') : `<tr class="empty-row"><td colspan="6">No BOQs saved yet.</td></tr>`;
+}
+function showBoqPreview(id){
+  const b = boqs.find(x=>x.id===id);
+  if(!b) return;
+  const num = n => Number(n||0).toLocaleString('en-PK');
+  const secs = BSEC.map((sec,si)=>({sec, letter:String.fromCharCode(65+si), items:(b.items||[]).filter(i=>i.sec===sec)})).filter(x=>x.items.length);
+  const rowsHtml = secs.map(g=>{
+    const tot = g.items.reduce((s,i)=>s+boqLine(i),0);
+    return `
+      <tr class="boq-print-sec"><td colspan="6">${g.letter}. ${BSEC_LABEL[g.sec].toUpperCase()}</td></tr>
+      ${g.items.map((i,n)=>`<tr><td>${g.letter}${n+1}</td><td>${esc(i.desc)||'—'}</td><td>${esc(i.unit)}</td><td class="num-col">${num(i.qty)}</td><td class="num-col">${num(i.rate)}</td><td class="num-col">${num(boqLine(i))}</td></tr>${boqWallNote(i)}`).join('')}
+      <tr><td colspan="5" style="text-align:right;font-family:'Helvetica Neue',Arial,sans-serif;font-size:11.5px;color:var(--ink-soft);">Total — ${BSEC_LABEL[g.sec]}</td><td class="num-col" style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:11.5px;font-weight:600;">${fmt(tot)}</td></tr>`;
+  }).join('');
+  const summary = secs.map(g=>`<tr><td>${g.letter}. ${BSEC_LABEL[g.sec]}</td><td class="num-col">${fmt(g.items.reduce((s,i)=>s+boqLine(i),0))}</td></tr>`).join('');
+  const terms = (b.terms||'').split('\n').filter(t=>t.trim()).map(t=>`<div>${esc(t)}</div>`).join('');
+  document.getElementById('boq-preview-wrap').innerHTML = `
+    <div class="doc-preview">
+      ${letterheadHtml('Bill of Quantities', b.no, ['Date: '+b.date, 'Client: '+esc(b.clientName), b.project?('Project: '+esc(b.project)):'', b.size?('Area: '+esc(b.size)):''].filter(Boolean))}
+      <table>
+        <thead><tr><th style="width:44px;">S#</th><th>Description / Material</th><th style="width:56px;">Unit</th><th class="num-col">Qty</th><th class="num-col">Rate (Rs)</th><th class="num-col">Amount (Rs)</th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+      <div class="boq-summary">
+        <table>
+          <thead><tr><th colspan="2">Summary</th></tr></thead>
+          <tbody>${summary}
+            <tr><td>Subtotal</td><td class="num-col">${fmt(b.subtotal)}</td></tr>
+            ${b.discount?`<tr><td>Discount</td><td class="num-col">− ${fmt(b.discount)}</td></tr>`:''}
+            <tr class="grand"><td>Grand Total</td><td class="num-col">${fmt(b.total)}</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;color:var(--ink-soft);margin-top:10px;">In Words: ${amountInWords(b.total)}</div>
+      ${terms?`<div class="boq-terms"><b>Notes / Terms &amp; Conditions</b>${terms}</div>`:''}
+      ${signatureBlockHtml()}
+      ${docFooterHtml()}
+      <div class="doc-actions">
+        <button class="btn" onclick="window.print()">Print / Save as PDF</button>
+        <button class="btn ghost" style="color:#25D366;border-color:#25D366;" onclick="sendBoqOnWhatsApp('${b.id}')">📱 Send on WhatsApp</button>
+        <button class="btn ghost" onclick="document.getElementById('boq-preview-wrap').innerHTML=''">Close</button>
+      </div>
+    </div>`;
+  document.getElementById('boq-preview-wrap').scrollIntoView({behavior:'smooth', block:'start'});
+}
+function sendBoqOnWhatsApp(id){
+  const b = boqs.find(x=>x.id===id);
+  if(!b) return;
+  const client = clients.find(c=>c.id===b.clientId);
+  const msg = `Dear ${b.clientName},\n\nPlease find your Bill of Quantities ${b.no} dated ${b.date}${b.project?(' for '+b.project):''} — Total: ${fmt(b.total)}, from ${FIRM.name}.\n\n(Tip: tap "Print / Save as PDF" first, save the file, then attach it here.)\n\nThank you!`;
+  sendOnWhatsApp(client?client.phone:'', msg);
+}
+
 /* ---------- Ledger ---------- */
 function renderLedger(){
   const clientId = document.getElementById('ledger-client').value;
@@ -1417,6 +1749,7 @@ function refreshAll(){
   renderReceipts();
   renderPayments();
   renderQuotations();
+  renderBoqs();
   renderLedger();
   renderDashboard();
 }
@@ -1666,7 +1999,10 @@ applyFirmToUI();
 document.getElementById('r-date').value = todayStr();
 document.getElementById('p-date').value = todayStr();
 document.getElementById('q-date').value = todayStr();
+document.getElementById('b-date').value = todayStr();
+document.getElementById('b-terms').value = BDEF_TERMS;
 renderQuoteRows();
+renderBoqRows();
 </script>
 </body>
 </html>
