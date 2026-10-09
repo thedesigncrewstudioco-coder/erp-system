@@ -651,6 +651,66 @@
   /* Email / Password label words in black (the boxes keep their original look) */
   #login-screen .login-card label{color:#000 !important;font-weight:600;}
 
+  /* ================= Dark dashboard theme (ME-style) ================= */
+  :root{--paper:#0B121B;--ink:#E9E3D8;--ink-soft:#9AA6B2;--line:rgba(255,255,255,.10);--card:rgba(23,33,45,.92);
+        --debit:#E2745F;--credit:#4FB287;--blue-deep:#E9E3D8;--blue:#C98B45;}
+  body{background:#0B121B;color:var(--ink);}
+  #app-bg{position:fixed;inset:0;z-index:0;background:#0B121B center/cover no-repeat;}
+  #app-bg::after{content:"";position:absolute;inset:0;background:rgba(9,15,23,.86);}
+  .sidebar,main{position:relative;z-index:1;}
+  main{max-width:none;padding:20px 28px 60px;}
+  .sidebar{width:260px;background:#0B1320;backdrop-filter:none;-webkit-backdrop-filter:none;color:#E9E3D8;
+    border-right:1px solid rgba(255,255,255,.07);box-shadow:none;}
+  .brand{border-bottom-color:rgba(255,255,255,.10);}
+  .logo-frame{width:170px;}
+  .logo-frame video{filter:invert(1);mix-blend-mode:screen;}
+  .brand h1{color:#fff;font-size:20px;}
+  .brand p,.brand p *{color:#9AA6B2 !important;}
+  nav button{color:#C5CED8;} nav button:hover{background:rgba(255,255,255,.06);color:#fff;}
+  nav button.active{background:rgba(201,139,69,.16);color:#fff;border-left-color:#C98B45;}
+  .sidebar-foot{color:#8B97A4;border-top-color:rgba(255,255,255,.08);} .sidebar-foot a{color:#E9E3D8 !important;}
+  .topbar{display:flex;gap:12px;align-items:center;margin-bottom:18px;}
+  .tb-email{background:#E4ECFA;color:#1b2430;font:14px "Helvetica Neue",Arial,sans-serif;padding:12px 22px;border-radius:10px;min-width:260px;}
+  .tb-btn{all:unset;cursor:pointer;background:#111B27;color:#fff;border:1px solid rgba(255,255,255,.12);
+    font:600 13px "Helvetica Neue",Arial,sans-serif;padding:12px 18px;border-radius:10px;}
+  .page-head h2{font-weight:700;font-size:28px;}
+  .hero{display:none !important;}
+  .dash-grid{display:grid;grid-template-columns:370px 1fr;gap:22px;align-items:start;}
+  .panel{background:var(--card);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:20px 22px;margin-bottom:18px;}
+  .panel-title{margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid var(--line);font-size:17px;font-weight:700;}
+  .panel-note{font:12px "Helvetica Neue",Arial,sans-serif;color:var(--ink-soft);margin:0 0 8px;}
+  .donut{--p:0%;width:150px;height:150px;border-radius:50%;margin:8px auto 20px;display:flex;align-items:center;justify-content:center;
+    background:conic-gradient(#EDE6DA var(--p),#2B3846 0);}
+  .donut-in{width:104px;height:104px;border-radius:50%;background:#17212D;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .donut-in b{font-size:24px;} .donut-in span{font:9px "Helvetica Neue",Arial,sans-serif;letter-spacing:.18em;color:var(--ink-soft);}
+  .legend-row{display:flex;justify-content:space-between;align-items:center;font:13px "Helvetica Neue",Arial,sans-serif;padding:9px 0;border-bottom:1px solid var(--line);}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:9px;} .dot.g{background:var(--credit);} .dot.r{background:var(--debit);}
+  .quick{display:flex;gap:10px;} .quick .btn{margin-top:0;}
+  .stat{border-radius:10px;border:1px solid rgba(255,255,255,.07);border-left:3px solid #888;min-width:140px;}
+  .stat.credit{border-left-color:var(--credit);} .stat.debit{border-left-color:var(--debit);} .stat.blue{border-left-color:#6F9BD6;}
+  .stat.copper{border-left-color:#C98B45;} .stat.gold{border-left-color:#E0B24A;} .stat.grey{border-left-color:#8C96B5;}
+  .stat .label{letter-spacing:.1em;font-size:10.5px;} .stat .value{color:var(--ink);font-weight:700;}
+  .stat.credit .value,.stat.debit .value{color:var(--ink);}
+  .form-card,.qcat-block,.balance-pill{border-radius:12px;background:var(--card);border-color:rgba(255,255,255,.08);}
+  h3.section-title,.qcat-head h4{color:var(--ink);}
+  .btn{background:#C98B45;color:#1a120a;font-weight:600;border-radius:8px;} .btn:hover{background:#D79B57;}
+  .btn.dark{background:#111B27;color:#fff;border:1px solid rgba(255,255,255,.14);}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);} .btn.ghost:hover{border-color:#C98B45;color:#C98B45;}
+  .btn.danger{background:transparent;color:var(--debit);border:1px solid var(--debit);}
+  input,select,textarea{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:var(--ink);border-radius:8px;}
+  input::placeholder,textarea::placeholder{color:#7C8895;} select option{background:#17212D;color:#E9E3D8;}
+  input[type=file]{padding:8px;}
+  thead th{border-bottom-color:rgba(255,255,255,.25);} tbody tr:hover{background:rgba(255,255,255,.04);}
+  .tag.receipt{background:rgba(79,178,135,.18);color:#6FD0A4;} .tag.payment{background:rgba(226,116,95,.18);color:#F09A88;} .tag.quote{background:rgba(201,139,69,.2);color:#E5B27A;}
+  .totals-box tr.grand td{border-top-color:rgba(255,255,255,.3);}
+  .sync-pill{color:#8FD0AE;}
+  /* printable documents stay light */
+  .doc-preview{--ink:#261E18;--ink-soft:#5C5046;--line:#D6CBBB;--card:#FBF8F3;--credit:#2F6B4F;--debit:#8A3B34;--blue-deep:#2A2019;color:#261E18;}
+  .doc-preview input,.doc-preview select{background:#fff;color:#261E18;}
+  @media print{#app-bg{display:none;} body{background:#fff;}}
+  @media (max-width:1100px){.dash-grid{grid-template-columns:1fr;}}
+  @media (max-width:800px){.sidebar{width:100%;} main{padding:16px 14px 50px;} .tb-email{min-width:0;flex:1;} .quick{flex-wrap:wrap;}}
+
   /* ---------- Loading overlay ---------- */
   #loading-screen{
     position:fixed; inset:0; background:var(--paper);
@@ -702,6 +762,7 @@
 </div>
 
 <div class="app" id="app-root" style="display:none;">
+  <div id="app-bg"></div>
 
   <aside class="sidebar">
     <div class="brand">
@@ -729,25 +790,53 @@
   </aside>
 
   <main>
+    <div class="topbar"><div class="tb-email" id="tb-email"></div><button class="tb-btn" onclick="doLogout()">Logout</button></div>
 
     <!-- DASHBOARD -->
     <section class="view active" id="view-dashboard">
-      <div class="hero" id="dash-hero"></div></div>
-      <div class="page-head">
-        <div><h2>Dashboard</h2><div class="sub">Overview of clients, vouchers and quotations</div></div>
+      <div class="hero" id="dash-hero"></div>
+      <div class="dash-grid">
+        <div class="dash-left">
+          <div class="panel">
+            <h3 class="panel-title">Cash Position</h3>
+            <div class="donut" id="cash-donut"><div class="donut-in"><b id="cash-pct">0%</b><span>RECEIVED</span></div></div>
+            <div class="legend-row"><span><i class="dot g"></i>Received</span><b id="cash-received">Rs 0</b></div>
+            <div class="legend-row"><span><i class="dot r"></i>Paid</span><b id="cash-paid">Rs 0</b></div>
+          </div>
+          <div class="panel">
+            <h3 class="panel-title">Backup</h3>
+            <p class="panel-note">Data is saved to your Firebase account automatically. Keep an offline copy as well.</p>
+            <button class="btn" onclick="downloadBackup()" style="margin-top:6px;">Download Backup</button>
+            <div class="panel-note" style="margin:16px 0 6px;letter-spacing:.06em;">RESTORE BACKUP FILE</div>
+            <input type="file" accept=".json" onchange="restoreBackup(event)">
+          </div>
+        </div>
+        <div class="dash-right">
+          <div class="page-head">
+            <div><h2>Accounting Dashboard</h2><div class="sub" id="dash-date"></div></div>
+            <div class="quick">
+              <button class="btn" onclick="goView('quotation')">+ Quotation</button>
+              <button class="btn" onclick="goView('receipt')">+ Receipt</button>
+              <button class="btn dark" onclick="goView('payment')">+ Payment</button>
+            </div>
+          </div>
+          <div class="stat-row">
+            <div class="stat credit"><div class="label">TOTAL RECEIVED</div><div class="value" id="stat-received">Rs 0</div></div>
+            <div class="stat debit"><div class="label">TOTAL PAID OUT</div><div class="value" id="stat-paid">Rs 0</div></div>
+            <div class="stat blue"><div class="label">CASH BALANCE</div><div class="value" id="stat-balance">Rs 0</div></div>
+            <div class="stat copper"><div class="label">QUOTATIONS RAISED</div><div class="value" id="stat-quoted">Rs 0</div></div>
+            <div class="stat gold"><div class="label">OUTSTANDING</div><div class="value" id="stat-outstanding">Rs 0</div></div>
+            <div class="stat grey"><div class="label">CLIENTS</div><div class="value" id="stat-clients">0</div></div>
+          </div>
+          <div class="panel">
+            <h3 class="panel-title">Recent Records</h3>
+            <table>
+              <thead><tr><th>Date</th><th>Type</th><th>Reference</th><th>Party</th><th>Description</th><th class="num-col">Amount</th></tr></thead>
+              <tbody id="recent-body"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
-      <div class="stat-row">
-        <div class="stat"><div class="label">CLIENTS</div><div class="value" id="stat-clients">0</div></div>
-        <div class="stat credit"><div class="label">TOTAL RECEIVED</div><div class="value" id="stat-received">Rs 0</div></div>
-        <div class="stat debit"><div class="label">TOTAL PAID OUT</div><div class="value" id="stat-paid">Rs 0</div></div>
-        <div class="stat"><div class="label">QUOTATIONS RAISED</div><div class="value" id="stat-quoted">Rs 0</div></div>
-      </div>
-
-      <h3 class="section-title">Recent Activity</h3>
-      <table>
-        <thead><tr><th>Date</th><th>Type</th><th>Reference</th><th>Party</th><th>Description</th><th class="num-col">Amount</th></tr></thead>
-        <tbody id="recent-body"></tbody>
-      </table>
     </section>
 
     <!-- CLIENTS -->
@@ -1009,6 +1098,7 @@ auth.onAuthStateChanged(user=>{
   const loadingScreen = document.getElementById('loading-screen');
   if(user){
     loginScreen.classList.add('hidden');
+    document.getElementById('tb-email').textContent = user.email||'';
     appRoot.style.display = '';
     loadFromCloud();
   } else {
@@ -1538,6 +1628,15 @@ function renderDashboard(){
   document.getElementById('stat-received').textContent = fmt(receipts.reduce((s,r)=>s+r.amount,0));
   document.getElementById('stat-paid').textContent = fmt(payments.reduce((s,p)=>s+p.amount,0));
   document.getElementById('stat-quoted').textContent = fmt(quotations.reduce((s,q)=>s+q.total,0));
+  const _rec=receipts.reduce((s,r)=>s+r.amount,0), _paid=payments.reduce((s,p)=>s+p.amount,0), _quo=quotations.reduce((s,q)=>s+q.total,0);
+  const _pct=_quo>0?Math.min(100,Math.round(_rec/_quo*100)):0;
+  document.getElementById('stat-balance').textContent = fmt(_rec-_paid);
+  document.getElementById('stat-outstanding').textContent = fmt(Math.max(0,_quo-_rec));
+  document.getElementById('cash-pct').textContent = _pct+'%';
+  document.getElementById('cash-donut').style.setProperty('--p', _pct+'%');
+  document.getElementById('cash-received').textContent = fmt(_rec);
+  document.getElementById('cash-paid').textContent = fmt(_paid);
+  document.getElementById('dash-date').textContent = new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) + ' · ' + ((typeof FIRM!=='undefined'&&FIRM.name)||'The Design Crew').toUpperCase();
 
   const activity = [
     ...receipts.map(r=>({date:r.date, type:'Receipt', ref:r.no, party:r.clientName, desc:r.desc, amount:r.amount, sign:1, ts:parseInt(r.id.replace('RV',''))||0})),
@@ -1556,6 +1655,7 @@ function renderDashboard(){
 }
 
 /* ---------- Helpers ---------- */
+function goView(v){ const b=document.querySelector('nav button[data-view="'+v+'"]'); if(b) b.click(); }
 function esc(s){ return (s||'').toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function escAttr(s){ return esc(s); }
 
@@ -1767,6 +1867,7 @@ const SIDEBAR_VIDEO_URI = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28
   layoutLogin(); setTimeout(layoutLogin,300);
   new MutationObserver(layoutLogin).observe(document.getElementById('login-screen'),{attributes:true,attributeFilter:['class']});
 })();
+document.getElementById('app-bg').style.backgroundImage = 'url(' + LOGIN_BG_URI + ')';
 applyFirmToUI();
 document.getElementById('r-date').value = todayStr();
 document.getElementById('p-date').value = todayStr();
