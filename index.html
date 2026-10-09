@@ -645,8 +645,11 @@
 
   /* ---------- Login layout: card + logo centred on the image tagline ---------- */
   #login-video{position:absolute;display:none;pointer-events:none;
-    filter:invert(1);mix-blend-mode:screen;}   /* white line-art logo over the sky */
+    mix-blend-mode:multiply;}   /* black line-art logo over the sky, white video background drops out */
   @media (min-width:801px){ #login-video{display:block;} }
+
+  /* Email / Password label words in black (the boxes keep their original look) */
+  #login-screen .login-card label{color:#000 !important;font-weight:600;}
 
   /* ---------- Loading overlay ---------- */
   #loading-screen{
@@ -1733,25 +1736,32 @@ const SIDEBAR_VIDEO_URI = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28
 (function(){
   const IMG_W=1672, IMG_H=941;         // source image size
   const TAG_CX=220;                     // x-centre of the tagline text in the image (px)
+  const TAG_Y=287;                      // y of the tagline in the image (px)
   const TEXT_TOP=148;                   // top of the "ARCHITECTURE" line in the image (px)
   const lv=document.getElementById('login-video');
   lv.src=SIDEBAR_VIDEO_URI; lv.muted=true; const pl=lv.play(); if(pl&&pl.catch) pl.catch(()=>{});
   function layoutLogin(){
     const scr=document.getElementById('login-screen'), card=scr.querySelector('.login-card');
-    if(window.innerWidth<=800){ card.style.position=''; card.style.left=''; card.style.bottom=''; return; }
     const vw=window.innerWidth, vh=window.innerHeight;
     const k=Math.max(vw/IMG_W, vh/IMG_H);                // background-size: cover
     const ox=(vw-IMG_W*k)/2, oy=(vh-IMG_H*k)/2;          // background-position: center
-    const cx=ox+TAG_CX*k;
-    const cw=card.offsetWidth||380;
+    const small=vw<=800;
+    const cx=small ? vw/2 : ox+TAG_CX*k;
+    const cw=card.offsetWidth||380, ch=card.offsetHeight||400;
     card.style.position='absolute';
     card.style.left=Math.max(12, cx-cw/2)+'px';
-    card.style.bottom=Math.round(vh*0.06)+'px';
+    // card starts just below the image's "SPACES THAT BUILD BETTER LIVES" line
+    const top=oy+(TAG_Y+34)*k;
+    card.style.bottom='auto';
+    card.style.top=Math.max(10, Math.min(top, vh-ch-12))+'px';
+    if(small){ lv.style.display='none'; return; }
+    // logo sits in the open sky to the right of the image writing, at its original size
     const h=Math.min(150*k, 170), w=h*300/313;
-    const bottom=oy+(TEXT_TOP-14)*k;
+    const lx=ox+415*k, ly=oy+200*k;                       // centre of that sky area in the image
+    lv.style.display='';
     lv.style.height=h+'px'; lv.style.width=w+'px';
-    lv.style.left=Math.max(12, cx-w/2)+'px';
-    lv.style.top=Math.max(10, bottom-h)+'px';
+    lv.style.left=Math.max(12, lx-w/2)+'px';
+    lv.style.top=Math.max(10, ly-h/2)+'px';
   }
   window.addEventListener('resize',layoutLogin);
   layoutLogin(); setTimeout(layoutLogin,300);
