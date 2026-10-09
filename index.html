@@ -742,6 +742,16 @@
   #sidebar-canvas{aspect-ratio:300/313;}
   .logo-frame{flex-shrink:0;margin-bottom:8px;}
 
+  /* ---------- Frosted translucent sidebar (photo visible, text clear) ---------- */
+  .sidebar{background:rgba(255,255,255,.38) !important;
+    -webkit-backdrop-filter:blur(18px) saturate(1.15);backdrop-filter:blur(18px) saturate(1.15);
+    border-right:1px solid rgba(255,255,255,.55);}
+  nav button .num{color:#7A430A;font-weight:700;}
+  nav button{font-weight:500;}
+  .brand .mark{color:#7A430A;font-weight:700;}
+  .sync-pill{color:#134d34;font-weight:600;}
+  .sidebar-foot{color:#1b1b1b;}
+
   /* ---------- Loading overlay ---------- */
   #loading-screen{
     position:fixed; inset:0; background:var(--paper);
