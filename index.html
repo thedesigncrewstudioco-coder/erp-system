@@ -737,6 +737,11 @@
   .tb-select{width:auto;background:#111B27;color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:12px 14px;}
   input[type=color]{cursor:pointer;}
 
+  /* ---------- Fix: app photo without the image writing behind the sidebar ---------- */
+  #app-bg{background-size:max(140vw,249vh) auto;background-position:100% 100%;}  /* zoomed to the bottom-right: text area is out of view */
+  #sidebar-canvas{aspect-ratio:300/313;}
+  .logo-frame{flex-shrink:0;margin-bottom:8px;}
+
   /* ---------- Loading overlay ---------- */
   #loading-screen{
     position:fixed; inset:0; background:var(--paper);
@@ -792,7 +797,7 @@
 
   <aside class="sidebar">
     <div class="brand">
-      <div class="logo-frame"><video id="sidebar-video" autoplay muted loop playsinline preload="auto"></video><canvas id="sidebar-canvas"></canvas></div>
+      <div class="logo-frame"><video id="sidebar-video" autoplay muted loop playsinline preload="auto"></video><canvas id="sidebar-canvas" width="300" height="313"></canvas></div>
       <div>
         <h1 id="sidebar-name">The Design Crew</h1>
         <div class="mark">DESIGN STUDIO</div>
