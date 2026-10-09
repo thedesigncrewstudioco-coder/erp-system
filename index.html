@@ -711,6 +711,32 @@
   @media (max-width:1100px){.dash-grid{grid-template-columns:1fr;}}
   @media (max-width:800px){.sidebar{width:100%;} main{padding:16px 14px 50px;} .tb-email{min-width:0;flex:1;} .quick{flex-wrap:wrap;}}
 
+  /* ---------- Transparent sidebar + black logo ---------- */
+  #app-bg::after{left:260px;}                                  /* photo stays bright behind the sidebar */
+  .sidebar{background:rgba(255,255,255,.42) !important;border-right:1px solid rgba(255,255,255,.5);color:#111;}
+  .logo-frame video{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;filter:none;mix-blend-mode:normal;}
+  .logo-frame{position:relative;width:190px;}
+  #sidebar-canvas{display:block;width:100%;height:auto;}
+  .brand{border-bottom-color:rgba(0,0,0,.15);}
+  .brand h1{color:#111;} .brand p,.brand p *{color:#222 !important;}
+  nav button{color:#1b1b1b;} nav button:hover{background:rgba(0,0,0,.07);color:#000;}
+  nav button.active{background:rgba(0,0,0,.11);color:#000;border-left-color:#B8741F;}
+  .sidebar-foot{color:#333;border-top-color:rgba(0,0,0,.14);} .sidebar-foot a{color:#111 !important;}
+  .sync-pill{color:#1f5f42;}
+  @media (max-width:800px){#app-bg::after{left:0;}}
+
+  /* ---------- Theme variables (editable in Firm Settings) + paper select ---------- */
+  :root{--accent:#C98B45;--accent-hi:#D79B57;--panelrgb:23,33,45;--shadergb:9,15,23;--shadeop:.86;--card:rgba(var(--panelrgb),.92);}
+  #app-bg::after{background:rgba(var(--shadergb),var(--shadeop));}
+  .donut-in{background:rgb(var(--panelrgb));}
+  .btn{background:var(--accent);} .btn:hover{background:var(--accent-hi);}
+  .btn.ghost{background:transparent;} .btn.ghost:hover{border-color:var(--accent);color:var(--accent);}
+  nav button.active{border-left-color:var(--accent);}
+  .stat.copper{border-left-color:var(--accent);}
+  .tb-label{font:12px "Helvetica Neue",Arial,sans-serif;color:var(--ink-soft);}
+  .tb-select{width:auto;background:#111B27;color:#fff;border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:12px 14px;}
+  input[type=color]{cursor:pointer;}
+
   /* ---------- Loading overlay ---------- */
   #loading-screen{
     position:fixed; inset:0; background:var(--paper);
@@ -766,7 +792,7 @@
 
   <aside class="sidebar">
     <div class="brand">
-      <div class="logo-frame"><video id="sidebar-video" autoplay muted loop playsinline preload="auto"></video></div>
+      <div class="logo-frame"><video id="sidebar-video" autoplay muted loop playsinline preload="auto"></video><canvas id="sidebar-canvas"></canvas></div>
       <div>
         <h1 id="sidebar-name">The Design Crew</h1>
         <div class="mark">DESIGN STUDIO</div>
@@ -790,7 +816,7 @@
   </aside>
 
   <main>
-    <div class="topbar"><div class="tb-email" id="tb-email"></div><button class="tb-btn" onclick="doLogout()">Logout</button></div>
+    <div class="topbar"><div class="tb-email" id="tb-email"></div><span class="tb-label">Paper</span><select id="paper-mode" class="tb-select" onchange="setPaper(this.value)"><option value="letterhead">Letterhead</option><option value="blank">Blank Letterhead</option></select><button class="tb-btn" onclick="doLogout()">Logout</button></div>
 
     <!-- DASHBOARD -->
     <section class="view active" id="view-dashboard">
@@ -992,6 +1018,17 @@
 
       <h3 class="section-title">Letterhead Preview</h3>
       <div class="doc-preview" id="letterhead-preview" style="max-width:640px;"></div>
+
+      <h3 class="section-title" style="margin-top:34px;">Theme Colors</h3>
+      <div class="form-card">
+        <div class="grid">
+          <div><label>Accent (buttons, highlights)</label><input type="color" id="th-accent" oninput="updateTheme()" style="height:40px;padding:3px;"></div>
+          <div><label>Cards / panels</label><input type="color" id="th-panel" oninput="updateTheme()" style="height:40px;padding:3px;"></div>
+          <div><label>Background shade</label><input type="color" id="th-shade" oninput="updateTheme()" style="height:40px;padding:3px;"></div>
+          <div><label>Background darkness (<span id="th-op-v">86</span>%)</label><input type="range" id="th-opacity" min="0" max="95" oninput="updateTheme()" style="padding:0;"></div>
+        </div>
+        <button class="btn ghost" onclick="resetTheme()">Reset to default colors</button>
+      </div>
 
       <h3 class="section-title" style="margin-top:34px;">Data Backup</h3>
       <div class="form-card">
@@ -1655,6 +1692,38 @@ function renderDashboard(){
 }
 
 /* ---------- Helpers ---------- */
+
+/* ---------- Paper mode & theme colours ---------- */
+function setPaper(v){
+  FIRM.paper = (v==='blank') ? 'blank' : 'letterhead';
+  renderLetterheadPreview();
+  saveToCloud();
+}
+const THEME_DEFAULT = {accent:'#C98B45', panel:'#17212D', shade:'#090F17', opacity:86};
+function _rgb(h){ h=h.replace('#',''); return [0,2,4].map(i=>parseInt(h.substr(i,2),16)).join(','); }
+function _lift(h,a){ h=h.replace('#',''); return '#'+[0,2,4].map(i=>{const c=parseInt(h.substr(i,2),16);return Math.round(c+(255-c)*a).toString(16).padStart(2,'0');}).join(''); }
+function applyTheme(){
+  const T = Object.assign({}, THEME_DEFAULT, FIRM.theme||{});
+  const r = document.documentElement.style;
+  r.setProperty('--accent', T.accent); r.setProperty('--copper', T.accent); r.setProperty('--blue', T.accent);
+  r.setProperty('--accent-hi', _lift(T.accent,.12));
+  r.setProperty('--panelrgb', _rgb(T.panel));
+  r.setProperty('--shadergb', _rgb(T.shade));
+  r.setProperty('--shadeop', (T.opacity/100).toString());
+  const set=(id,v)=>{const e=document.getElementById(id); if(e) e.value=v;};
+  set('th-accent',T.accent); set('th-panel',T.panel); set('th-shade',T.shade); set('th-opacity',T.opacity);
+  const ov=document.getElementById('th-op-v'); if(ov) ov.textContent=T.opacity;
+}
+function updateTheme(){
+  FIRM.theme = {
+    accent: document.getElementById('th-accent').value,
+    panel: document.getElementById('th-panel').value,
+    shade: document.getElementById('th-shade').value,
+    opacity: parseInt(document.getElementById('th-opacity').value,10),
+  };
+  applyTheme(); saveToCloud();
+}
+function resetTheme(){ delete FIRM.theme; applyTheme(); saveToCloud(); }
 function goView(v){ const b=document.querySelector('nav button[data-view="'+v+'"]'); if(b) b.click(); }
 function esc(s){ return (s||'').toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function escAttr(s){ return esc(s); }
@@ -1677,6 +1746,7 @@ let FIRM = {
   email: 'thedesigncrewstudio.co@gmail.com',
   facebook: 'The Design Crew',
   instagram: 'thedesigncrew',
+  paper: 'letterhead',   // 'letterhead' | 'blank'
 };
 
 function numToWords(num){
@@ -1705,6 +1775,15 @@ function numToWords(num){
 function amountInWords(n){ return 'Rupees ' + numToWords(n) + ' Only'; }
 
 function letterheadHtml(docTitle, ref, metaLines){
+  if(FIRM.paper==='blank'){   // pre-printed paper: no logo/name, keep space at the top
+    return `
+    <div class="letterhead" style="border-bottom:1px solid var(--line);margin-top:90px;justify-content:flex-end;">
+      <div class="lh-meta">
+        <div style="font-size:14px;color:var(--ink);font-family:Georgia,serif;">${docTitle} ${ref}</div>
+        ${metaLines.map(l=>`<div>${l}</div>`).join('')}
+      </div>
+    </div>`;
+  }
   return `
     <div class="letterhead">
       <div class="lh-brand">
@@ -1721,6 +1800,7 @@ function letterheadHtml(docTitle, ref, metaLines){
     </div>`;
 }
 function docFooterHtml(){
+  if(FIRM.paper==='blank') return '';   // footer is pre-printed on blank letterhead
   const addr = FIRM.address ? `<div style="width:100%;margin-bottom:2px;">${esc(FIRM.address)}</div>` : '';
   return `
     <div class="doc-footer">
@@ -1762,6 +1842,8 @@ function updateFirm(){
   saveToCloud();
 }
 function applyFirmToUI(){
+  { const pm=document.getElementById('paper-mode'); if(pm) pm.value = FIRM.paper==='blank'?'blank':'letterhead'; }
+  applyTheme();
   document.getElementById('s-name').value = FIRM.name;
   document.getElementById('s-tagline').value = FIRM.tagline;
   document.getElementById('s-address').value = FIRM.address;
@@ -1866,6 +1948,27 @@ const SIDEBAR_VIDEO_URI = 'data:video/mp4;base64,AAAAIGZ0eXBpc29tAAACAGlzb21pc28
   window.addEventListener('resize',layoutLogin);
   layoutLogin(); setTimeout(layoutLogin,300);
   new MutationObserver(layoutLogin).observe(document.getElementById('login-screen'),{attributes:true,attributeFilter:['class']});
+})();
+
+/* sidebar logo: play the video into a canvas and turn its white background transparent (black logo) */
+(function(){
+  const v=document.getElementById('sidebar-video'), c=document.getElementById('sidebar-canvas');
+  const ctx=c.getContext('2d',{willReadFrequently:true});
+  function draw(){
+    if(v.videoWidth && v.readyState>=2){
+      if(c.width!==v.videoWidth){ c.width=v.videoWidth; c.height=v.videoHeight; }
+      ctx.drawImage(v,0,0);
+      const d=ctx.getImageData(0,0,c.width,c.height), a=d.data;
+      for(let i=0;i<a.length;i+=4){
+        const l=a[i]*.299+a[i+1]*.587+a[i+2]*.114;
+        a[i]=a[i+1]=a[i+2]=0;
+        a[i+3]=Math.max(0,Math.min(255,(255-l)*1.35));
+      }
+      ctx.putImageData(d,0,0);
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
 })();
 document.getElementById('app-bg').style.backgroundImage = 'url(' + LOGIN_BG_URI + ')';
 applyFirmToUI();
